@@ -12,9 +12,9 @@ bl_info = {
 import bpy
 from bpy.app.handlers import persistent
 
-from . import edit, mesh, ops, props, rig, state, ui, vox
+from . import edit, export, mesh, ops, props, rig, state, ui, vox
 
-modules = (props, ops, rig, vox, edit, ui)
+modules = (props, ops, rig, vox, edit, ui, export)
 
 
 @persistent

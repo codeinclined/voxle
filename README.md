@@ -95,6 +95,39 @@ The rest pose is unchanged by any of this. Turn the IK checkbox off before click
   assignment you don't like. Ctrl+click sends a voxel back to automatic.
 - **Symmetrize X** and **Flip X** swap `.L`/`.R` bone assignments.
 
+## Game engine export
+
+Open the **Game Export** tab in the sidebar (N). Settings at the top apply to every engine:
+
+- **Export**: the active model, selected models (selecting a rig picks its models) or every
+  voxel model in the scene, one file per model by default.
+- **Merge Flat Faces** (on): greedy meshing merges flat runs of same-colored faces into
+  larger quads, often cutting triangles by more than half. On rigged models only faces that
+  move rigidly with one bone are merged, so nothing cracks when they bend.
+- **Colors**: the 256x1 palette texture (nearest filtering, so colors never bleed) or vertex
+  colors with a plain material.
+- **Deform Bones Only** (on): IK controls, poles and helper bones are left out; animation
+  they drive is baked onto the deforming bones.
+- **Animations**: all actions, the active action, or NLA tracks, with optional keyframe
+  compaction.
+
+Export never touches your scene: it builds a temporary optimized copy, exports it under the
+model's real name, and removes it again.
+
+**Godot** — exports glTF (`.glb` or `.gltf`), which Godot 4 imports natively and which is a
+stable format, unlike `.tscn` scenes. Pick your project folder (the plugin finds
+`project.godot` and shows the `res://` path) and a folder inside it, then press **Export to
+Godot**. Godot import hints are optional: a **Collision** suffix (`-col`, `-convcol`,
+`-colonly`) for static models, and **Loop Animations** (`-loop`).
+
+**Unity** and **Unreal Engine 5** sections are placeholders for now; use **Other Engine**
+meanwhile (Unity: FBX, Y up, Z forward; UE5: FBX, Z up, scale 100).
+
+**Other Engine** — glTF or FBX to any folder, with the up axis, forward axis (FBX) and scale.
+
+Note that engines skin with plain linear blending, while Blender's preview uses Preserve
+Volume, so very tight elbow and knee bends can look slightly thinner in the engine.
+
 ## Other features
 
 - 256-color palette per object (index 0 = empty, as in MagicaVoxel). The default palette
@@ -115,3 +148,8 @@ blender -b --factory-startup --python tests/test_headless.py
 # Opens a window and drives the editor with simulated input (real input is ignored):
 blender --factory-startup --enable-event-simulate --python tests/test_interactive.py -- /tmp/shots
 ```
+
+## Credits
+
+The Godot logo (`voxel_editor/icons/godot.png`) is by Andrea Calabró, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

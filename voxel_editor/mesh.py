@@ -204,14 +204,24 @@ def _write_colors(me, face_rgba):
 JOINT_INSET = 0.006
 
 
-def rebuild(obj, grid=None, bones=None, weights=True, bone_view=False):
-    """Regenerate the mesh (and, if bound to an armature, its skin weights)."""
+def rebuild(obj, grid=None, bones=None, weights=True, bone_view=False, target=None, optimize=False):
+    """Regenerate the mesh (and, if bound to an armature, its skin weights).
+
+    target: write into this object's mesh and vertex groups instead of obj's own (used by
+    export, which builds a separate copy). optimize: merge flat runs of same-colored faces
+    into bigger quads (see core.merge_coplanar).
+    """
     from . import rig
 
     vp = obj.voxel
     if grid is None:
         grid, bones = load_arrays(obj)
     ensure_material(obj)
+    out = obj if target is None else target
+    if target is not None:
+        target.data.materials.clear()
+        for m in obj.data.materials:
+            target.data.materials.append(m)
 
     info = None
     arm = rig.get_armature(obj)
@@ -245,8 +255,18 @@ def rebuild(obj, grid=None, bones=None, weights=True, bone_view=False):
             # The slices only exist on the bound mesh; voxel editing shows plain voxels.
             surf, W = core.smooth_hinges(surf, W, info, vp.bend_loops)
 
-    me = obj.data
-    _write_geometry(me, surf, vp.voxel_size, np.array(grid_offset(grid.shape), np.float32))
+    offset = np.array(grid_offset(grid.shape), np.float32)
+    co = surf.verts.astype(np.float32)
+    if W is not None and len(surf.verts):
+        # Limbs are a hair thinner per hierarchy level so bent joints don't z-fight.
+        co = co + core.inset_offsets(surf, JOINT_INSET * (info.depths.astype(np.float32) @ W))
+    if optimize and len(surf.verts):
+        surf, W, keep = core.merge_coplanar(surf, W, grid)
+        co = co[keep]
+    co = (co + offset) * vp.voxel_size
+
+    me = out.data
+    _write_geometry(me, surf, co)
 
     F = len(surf.faces)
     fx, fy, fz = surf.face_voxel.T
@@ -281,13 +301,9 @@ def rebuild(obj, grid=None, bones=None, weights=True, bone_view=False):
         _write_colors(me, _palette_linear(obj)[ci])
 
     if W is not None:
-        _write_vertex_groups(obj, info.names, W)
-        vp.rest_hash = info.hash
-        if len(surf.verts):
-            amount = JOINT_INSET * (info.depths.astype(np.float32) @ W)
-            co = (surf.verts + core.inset_offsets(surf, amount)
-                  + np.array(grid_offset(grid.shape), np.float32)) * vp.voxel_size
-            me.vertices.foreach_set("co", co.astype(np.float32).ravel())
+        _write_vertex_groups(out, info.names, W)
+        if target is None:
+            vp.rest_hash = info.hash
     _apply_shading(me, vp)
     me.update()
 
@@ -303,15 +319,14 @@ def _apply_shading(me, vp):
         me.shade_flat()
 
 
-def _write_geometry(me, surf, size, offset):
+def _write_geometry(me, surf, co):
     me.clear_geometry()
     V, F = len(surf.verts), len(surf.faces)
     if V == 0:
         me.update()
         return
-    co = (surf.verts.astype(np.float32) + offset) * size
     me.vertices.add(V)
-    me.vertices.foreach_set("co", co.ravel())
+    me.vertices.foreach_set("co", co.astype(np.float32).ravel())
     me.loops.add(F * 4)
     me.loops.foreach_set("vertex_index", surf.faces.ravel())
     me.polygons.add(F)
