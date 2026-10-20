@@ -1,3 +1,5 @@
+import math
+
 import bpy
 from bpy.props import (
     BoolProperty,
@@ -66,8 +68,19 @@ class VoxelObjectSettings(PropertyGroup):
         description="Armature that deforms this voxel model",
     )
     bound: BoolProperty(default=False)
+    auto_smooth: BoolProperty(
+        name="Auto Smooth", default=False, update=_on_geometry_setting,
+        description="Shade smooth, keeping edges sharper than the angle below sharp (like "
+                    "Shade Auto Smooth). Voxel edges stay crisp while bent elbows and knees "
+                    "shade as smooth curves",
+    )
+    auto_smooth_angle: FloatProperty(
+        name="Angle", default=math.radians(30.0), min=0.0, max=math.pi, subtype='ANGLE',
+        update=_on_geometry_setting,
+        description="Edges between faces at a steeper angle than this stay sharp",
+    )
     bend_loops: IntProperty(
-        name="Bend Loops", default=4, min=0, max=8, update=_on_geometry_setting,
+        name="Bend Loops", default=2, min=0, max=8, update=_on_geometry_setting,
         description="Loop cuts on each side of an elbow or knee. More gives a rounder bend, "
                     "fewer a blockier one, 0 bends inside a single voxel. Only added to the "
                     "rigged mesh, never shown while editing voxels",

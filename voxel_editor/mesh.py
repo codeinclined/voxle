@@ -288,7 +288,19 @@ def rebuild(obj, grid=None, bones=None, weights=True, bone_view=False):
             co = (surf.verts + core.inset_offsets(surf, amount)
                   + np.array(grid_offset(grid.shape), np.float32)) * vp.voxel_size
             me.vertices.foreach_set("co", co.astype(np.float32).ravel())
+    _apply_shading(me, vp)
     me.update()
+
+
+def _apply_shading(me, vp):
+    """Flat voxel shading, or smooth with sharp edges past an angle (Shade Auto Smooth)."""
+    if not len(me.polygons):
+        return
+    if vp.auto_smooth:
+        me.shade_smooth()
+        me.set_sharp_from_angle(angle=vp.auto_smooth_angle)
+    else:
+        me.shade_flat()
 
 
 def _write_geometry(me, surf, size, offset):

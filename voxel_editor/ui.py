@@ -159,6 +159,11 @@ class VIEW3D_PT_voxel_model(VoxelSubPanel, Panel):
         row.operator("voxel.resize", text="Resize", icon='FULLSCREEN_ENTER')
         row.operator("voxel.crop", text="Fit to Model", icon='PIVOT_BOUNDBOX')
         layout.prop(vp, "voxel_size")
+        row = layout.row(align=True)
+        row.prop(vp, "auto_smooth")
+        sub = row.row(align=True)
+        sub.active = vp.auto_smooth
+        sub.prop(vp, "auto_smooth_angle", text="")
 
         col = layout.column(align=True)
         for label, op in (("Flip", "voxel.flip"), ("Rotate", "voxel.rotate")):
