@@ -314,7 +314,29 @@ try:
     tp.voxel.bend_loops = 0
     co = np.array([v.co[:] for v in tp.data.vertices]) / tp.voxel.voxel_size
     check("0 bend loops adds no cuts", np.abs(co - np.round(co)).max() < 0.06)
-    tp.voxel.bend_loops = 4
+    tp.voxel.bend_loops = 2
+    check("bend loops default to 2", type(tp.voxel).bl_rna.properties["bend_loops"].default == 2)
+    # Auto Smooth: smooth shading with voxel edges kept sharp, bend slices smooth.
+    check("flat shading by default", not tp.voxel.auto_smooth and not any(p.use_smooth for p in tp.data.polygons))
+    tp.voxel.auto_smooth = True
+    me = tp.data
+    sharp = me.attributes.get("sharp_edge")
+    sv = [False] * len(me.edges)
+    if sharp is not None:
+        sharp.data.foreach_get("value", sv)
+    fn = {}
+    for poly in me.polygons:
+        for k in poly.edge_keys:
+            fn.setdefault(k, []).append(poly.normal.copy())
+    keyidx = {e.key: i for i, e in enumerate(me.edges)}
+    wrong = 0
+    for k, ns in fn.items():
+        if len(ns) == 2:
+            should = ns[0].angle(ns[1]) > tp.voxel.auto_smooth_angle + 1e-3
+            wrong += should != sv[keyidx[k]]
+    check("auto smooth: smooth faces, sharp voxel edges", all(p.use_smooth for p in me.polygons) and any(sv) and wrong == 0)
+    tp.voxel.auto_smooth = False
+    check("auto smooth off goes back to flat", not any(p.use_smooth for p in tp.data.polygons))
     for pb in TP:
         pb.matrix_basis = Matrix()
         for cn in pb.constraints: cn.mute = False

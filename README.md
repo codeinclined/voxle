@@ -58,7 +58,7 @@ feet stay planted.
 - **Elbows and knees** bend as a smooth curve: on the bound mesh the joint region is
   loop-cut into thin slices with weight easing from the upper to the lower limb, and the
   Armature modifier uses Preserve Volume, so a box limb bends into a clean arc instead of
-  folding over itself (up to about 150 degrees). **Bend Loops** (Rigging panel, default 4)
+  folding over itself (up to about 150 degrees). **Bend Loops** (Rigging panel, default 2)
   sets how many loop cuts go on each side of the joint: more for a rounder bend, fewer for
   a blockier one, 0 to bend inside a single voxel. The extra loops only exist on the rigged
   mesh: voxel editing always shows plain voxels.
@@ -101,6 +101,9 @@ The rest pose is unchanged by any of this. Turn the IK checkbox off before click
   has one hue per column with 8 shades; a MagicaVoxel Classic preset is also included.
   Edit colors in the Palette panel. Colors live in a 256×1 texture plus a color attribute,
   so they survive game-engine export.
+- **Auto Smooth** (Model panel, off by default): shade smooth while keeping edges sharper
+  than the angle (30° by default) sharp, like Shade Auto Smooth. Voxel edges stay crisp and
+  bent elbows and knees shade as smooth curves. It's reapplied whenever the mesh rebuilds.
 - Model tools: resize, fit grid to model, flip, rotate 90°, symmetrize, shift, replace color, clear.
 - **.vox import/export** (File > Import/Export), including multi-model scenes with transforms.
 - Voxel data is stored on the object, so it survives save/reload and Blender's undo.

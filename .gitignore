@@ -1,2 +1,4 @@
 *.zip
 *.blend
+__pycache__/
+*.pyc

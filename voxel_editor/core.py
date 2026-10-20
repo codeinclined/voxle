@@ -217,7 +217,7 @@ def slice_faces(surf, W, axis, plane, face_mask):
     return Surface(np.concatenate([V, nv]), faces, fvox, fdir, part, weld), W
 
 
-HINGE_SLICES = 4
+HINGE_SLICES = 2
 
 
 def smooth_hinges(surf, W, info, slices=HINGE_SLICES):
