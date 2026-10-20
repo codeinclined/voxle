@@ -1,6 +1,7 @@
-"""Game engine export: shared options, plus a section per engine (Godot, Unity, UE5, other)."""
+"""Voxle game engine export: shared options, plus a section per engine (Godot, Unity, Unreal, other)."""
 
 import os
+import textwrap
 
 import bpy
 import bpy.utils.previews
@@ -12,6 +13,17 @@ from . import mesh, rig, state
 ICONS = None  # bpy.utils.previews collection with the engine logos
 
 GODOT_COLLISION_SUFFIX = {'NONE': "", 'TRIMESH': "-col", 'CONVEX': "-convcol", 'ONLY': "-colonly"}
+
+
+def wrapped_label(layout, context, text, icon='NONE'):
+    """A label that wraps to the sidebar's width (Blender labels don't wrap on their own)."""
+    width = context.region.width if context.region else 300
+    scale = context.preferences.system.ui_scale
+    chars = max(12, int((width - (50 if icon != 'NONE' else 20) * scale) / (6.5 * scale)))
+    col = layout.column(align=True)
+    for i, line in enumerate(textwrap.wrap(text, chars) or [""]):
+        col.label(text=line, icon=icon if i == 0 else 'BLANK1' if icon != 'NONE' else 'NONE')
+    return col
 
 
 def icon(name):
@@ -79,7 +91,7 @@ class VoxelExportSettings(PropertyGroup):
         description="Your Godot project folder (the one containing project.godot)",
     )
     godot_folder: StringProperty(
-        name="Folder", default="models",
+        name="Folder", default="assets/models",
         description="Folder inside the project to export to (created if needed)",
     )
     godot_format: EnumProperty(
@@ -383,7 +395,7 @@ class VOXEL_OT_export_engine(Operator):
             if len(batch) == 1:
                 stem = bpy.path.clean_name(batch[0].name)
             else:
-                stem = bpy.path.clean_name(bpy.path.display_name_from_filepath(bpy.data.filepath) or "voxels")
+                stem = bpy.path.clean_name(bpy.path.display_name_from_filepath(bpy.data.filepath) or "voxle")
             path = os.path.join(folder, stem + extension(fmt))
             name_suffix = suffix if not any(o.voxel.bound for o in batch) else ""
             try:
@@ -409,13 +421,13 @@ class VOXEL_OT_export_engine(Operator):
 
 
 # ----------------------------------------------------------------------------
-# Panels (their own "Game Export" sidebar tab)
+# Panels (their own "Voxle Export" sidebar tab)
 
 
 class ExportPanel:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Game Export"
+    bl_category = "Voxle Export"
 
 
 class VIEW3D_PT_voxel_export(ExportPanel, Panel):
@@ -429,7 +441,7 @@ class VIEW3D_PT_voxel_export(ExportPanel, Panel):
         models = models_to_export(context, s.target)
         layout.prop(s, "target")
         if not models:
-            layout.label(text="No voxel models to export", icon='INFO')
+            wrapped_label(layout, context, "No voxel models to export", icon='INFO')
         elif s.target != 'ACTIVE':
             layout.label(text=f"{len(models)} model(s)", icon='OUTLINER_OB_MESH')
         if len(models) > 1:
@@ -446,7 +458,7 @@ class VIEW3D_PT_voxel_export(ExportPanel, Panel):
         sub.prop(s, "animation_mode", text="Mode")
         sub.prop(s, "compact_animations")
         if state.ACTIVE is not None:
-            layout.label(text="Leave voxel editing to export", icon='ERROR')
+            wrapped_label(layout, context, "Leave voxel editing to export", icon='ERROR')
 
 
 class VIEW3D_PT_voxel_export_godot(ExportPanel, Panel):
@@ -465,9 +477,9 @@ class VIEW3D_PT_voxel_export_godot(ExportPanel, Panel):
         root = godot_project_root(s.godot_project)
         if s.godot_project:
             if root:
-                layout.label(text=f"Godot project: {godot_project_name(root)}", icon='CHECKMARK')
+                wrapped_label(layout, context, f"Godot project: {godot_project_name(root)}", icon='CHECKMARK')
             else:
-                layout.label(text="No project.godot found here", icon='ERROR')
+                wrapped_label(layout, context, "No project.godot found here", icon='ERROR')
         layout.prop(s, "godot_folder")
         layout.prop(s, "godot_format")
         layout.prop(s, "godot_collision")
@@ -487,20 +499,18 @@ class VIEW3D_PT_voxel_export_unity(ExportPanel, Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        col = self.layout.column(align=True)
-        col.label(text="Coming soon.", icon='INFO')
-        col.label(text="For now use Other Engine: FBX, Y up, Z forward.")
+        wrapped_label(self.layout, context, "Coming soon. For now, use Other Engine with FBX, "
+                      "Y up and Z forward.", icon='INFO')
 
 
 class VIEW3D_PT_voxel_export_unreal(ExportPanel, Panel):
-    bl_label = "Unreal Engine 5"
+    bl_label = "Unreal Engine"
     bl_parent_id = "VIEW3D_PT_voxel_export"
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        col = self.layout.column(align=True)
-        col.label(text="Coming soon.", icon='INFO')
-        col.label(text="For now use Other Engine: FBX, Z up, scale 100.")
+        wrapped_label(self.layout, context, "Coming soon. For now, use Other Engine with FBX, "
+                      "Z up and scale 100.", icon='INFO')
 
 
 class VIEW3D_PT_voxel_export_other(ExportPanel, Panel):
@@ -522,7 +532,7 @@ class VIEW3D_PT_voxel_export_other(ExportPanel, Panel):
         sub.prop(s, "other_forward")
         layout.prop(s, "other_scale")
         if s.other_format != 'FBX' and s.other_up not in {'Y', 'Z'}:
-            layout.label(text="glTF supports Y or Z up only", icon='ERROR')
+            wrapped_label(layout, context, "glTF supports Y or Z up only", icon='ERROR')
         row = layout.row()
         row.scale_y = 1.5
         row.enabled = bool(s.other_path)

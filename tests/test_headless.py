@@ -3,10 +3,10 @@ import os, sys, tempfile, traceback
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import bpy
 import numpy as np
-import voxel_editor
-from voxel_editor import core, mesh, rig, vox, ops, state
+import voxle
+from voxle import core, mesh, rig, vox, ops, state
 
-voxel_editor.register()
+voxle.register()
 fails = 0
 def check(name, cond):
     global fails
@@ -418,7 +418,7 @@ try:
         return json.loads(data[20:20 + n])
     def tris(j):
         return sum(j["accessors"][p["indices"]]["count"] // 3 for m in j["meshes"] for p in m["primitives"])
-    from voxel_editor import export as vexport
+    from voxle import export as vexport
     proj = os.path.join(tmp, "godot_proj"); os.makedirs(proj, exist_ok=True)
     with open(os.path.join(proj, "project.godot"), "w") as f:
         f.write('[application]\nconfig/name="T"\n')
@@ -501,6 +501,25 @@ try:
     bpy.data.objects.remove(crate)
     ctx.view_layer.objects.active = obj
 
+    # Voxle naming
+    from voxle import ui as vui
+    check("sidebar tabs are Voxle and Voxle Export", vui.VIEW3D_PT_voxel.bl_category == "Voxle"
+          and vui.VIEW3D_PT_voxel.bl_label == "Voxle" and vexport.VIEW3D_PT_voxel_export.bl_category == "Voxle Export")
+    check("godot folder defaults to assets/models",
+          type(ctx.scene.voxel_export).bl_rna.properties["godot_folder"].default == "assets/models")
+    manifest = open(os.path.join(os.path.dirname(voxle.__file__), "blender_manifest.toml")).read()
+    check("manifest: Voxle by Josh Taylor", 'id = "voxle"' in manifest and 'name = "Voxle"' in manifest
+          and 'maintainer = "Josh Taylor <josh@codeinclined.com>"' in manifest)
+    bpy.ops.voxel.new(dims=(4, 4, 4), start='BLOCK', edit=False)
+    nv = ctx.active_object
+    check("new objects are named Voxle", nv.name.startswith("Voxle"))
+    m = nv.data.materials[0]
+    del m[mesh.MATERIAL_TAG]; m["voxel_editor_material"] = True  # as saved before the rename
+    mesh.ensure_material(nv)
+    check("materials from before the rename are reused", nv.data.materials[0] == m)
+    bpy.data.objects.remove(nv)
+    ctx.view_layer.objects.active = obj
+
     # Save/reload persists
     fp = os.path.join(tmp, "t.blend")
     nf = len(obj.data.polygons)
@@ -513,7 +532,7 @@ try:
     check("palette image pixels after reload", abs(o.voxel.palette_image.pixels[5*4] - 1) < 1e-3)
 
     # unregister / register
-    voxel_editor.unregister(); voxel_editor.register()
+    voxle.unregister(); voxle.register()
     check("re-register", hasattr(bpy.types.Object, "voxel"))
 except Exception:
     traceback.print_exc()

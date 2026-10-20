@@ -77,7 +77,7 @@ class VoxelOp:
 
 class VOXEL_OT_new(bpy.types.Operator):
     bl_idname = "voxel.new"
-    bl_label = "Voxel Object"
+    bl_label = "Voxle Object"
     bl_description = "Create a new voxel object and start editing it"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -106,7 +106,7 @@ class VOXEL_OT_new(bpy.types.Operator):
             grid[x0:x0 + n, y0:y0 + n, 0:n] = color
         elif self.start == 'FLOOR':
             grid[:, :, 0] = color
-        obj = vox.new_voxel_object(context, "Voxels", grid, None, self.voxel_size,
+        obj = vox.new_voxel_object(context, "Voxle", grid, None, self.voxel_size,
                                    context.scene.cursor.location.copy())
         for o in context.selected_objects:
             o.select_set(False)

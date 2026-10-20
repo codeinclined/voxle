@@ -1,21 +1,27 @@
-# Voxel Editor for Blender
+# Voxle
 
 MagicaVoxel/Goxel-style voxel modeling inside Blender (4.2+, tested on 5.2), with a
-one-click armature that fits the model and voxel-based skin weights.
+one-click armature that fits the model, voxel-based skin weights, and export to game engines.
+
+> **Made with Claude Code.** Voxle was created with [Claude Code](https://claude.com/claude-code),
+> Anthropic's AI coding assistant, working from directions and feedback by Josh Taylor.
 
 ## Install
 
 ```sh
-cd voxel_editor && blender --command extension build   # makes voxel_editor-1.0.0.zip
+cd voxle && blender --command extension build --output-dir ..   # makes voxle-1.0.0.zip
 ```
 
 Then in Blender use **Edit > Preferences > Get Extensions > ⌄ > Install from Disk** and pick
-the zip. You can also symlink `voxel_editor/` into your extensions `user_default` folder
+the zip. You can also symlink `voxle/` into your extensions `user_default` folder
 while developing.
+
+If you installed the add-on before it was renamed Voxle ("Voxel Editor"), uninstall that
+one first: both register the same tools. Files saved with it open fine in Voxle.
 
 ## Quick start
 
-1. **Add > Voxel Object** (or **Sidebar (N) > Voxel > New Voxel Object**). You get an empty grid and editing starts right away in Box + Attach.
+1. **Add > Voxle Object** (or **Sidebar (N) > Voxle > New Voxle Object**). You get an empty grid and editing starts right away in Box + Attach.
 2. Click on surfaces to build. A palette sits in the bottom-left corner of the viewport; click a color to select it.
 3. Press **Tab** when you're done. The model is an ordinary mesh, so modifiers, materials and exporters like glTF and FBX all work.
 
@@ -43,7 +49,7 @@ MMB, the scroll wheel, numpad views and the navigation gizmo work as usual while
 
 ## Rigging
 
-In **Sidebar > Voxel > Rigging**, pick a template: **Humanoid**, **Quadruped**, **Chain** or
+In **Sidebar > Voxle > Rigging**, pick a template: **Humanoid**, **Quadruped**, **Chain** or
 **Single Bone**. The humanoid template reads the model's shape to place the bones. It finds the
 crotch from the gap between the legs, the neck from where the head narrows, and whether the
 arms are in a T-pose or hanging down. The armature is created, parented and bound right away.
@@ -97,7 +103,7 @@ The rest pose is unchanged by any of this. Turn the IK checkbox off before click
 
 ## Game engine export
 
-Open the **Game Export** tab in the sidebar (N). Settings at the top apply to every engine:
+Open the **Voxle Export** tab in the sidebar (N). Settings at the top apply to every engine:
 
 - **Export**: the active model, selected models (selecting a rig picks its models) or every
   voxel model in the scene, one file per model by default.
@@ -115,13 +121,13 @@ Export never touches your scene: it builds a temporary optimized copy, exports i
 model's real name, and removes it again.
 
 **Godot** — exports glTF (`.glb` or `.gltf`), which Godot 4 imports natively and which is a
-stable format, unlike `.tscn` scenes. Pick your project folder (the plugin finds
-`project.godot` and shows the `res://` path) and a folder inside it, then press **Export to
-Godot**. Godot import hints are optional: a **Collision** suffix (`-col`, `-convcol`,
+stable format, unlike `.tscn` scenes. Pick your project folder (Voxle finds
+`project.godot` and shows the `res://` path) and a folder inside it (`assets/models` by
+default), then press **Export to Godot**. Godot import hints are optional: a **Collision** suffix (`-col`, `-convcol`,
 `-colonly`) for static models, and **Loop Animations** (`-loop`).
 
-**Unity** and **Unreal Engine 5** sections are placeholders for now; use **Other Engine**
-meanwhile (Unity: FBX, Y up, Z forward; UE5: FBX, Z up, scale 100).
+**Unity** and **Unreal Engine** sections are placeholders for now; use **Other Engine**
+meanwhile (Unity: FBX, Y up, Z forward; Unreal: FBX, Z up, scale 100).
 
 **Other Engine** — glTF or FBX to any folder, with the up axis, forward axis (FBX) and scale.
 
@@ -151,5 +157,8 @@ blender --factory-startup --enable-event-simulate --python tests/test_interactiv
 
 ## Credits
 
-The Godot logo (`voxel_editor/icons/godot.png`) is by Andrea Calabró, licensed under
+Voxle is maintained by Josh Taylor <josh@codeinclined.com> and was built with
+[Claude Code](https://claude.com/claude-code).
+
+The Godot logo (`voxle/icons/godot.png`) is by Andrea Calabró, licensed under
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
