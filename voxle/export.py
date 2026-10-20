@@ -482,7 +482,7 @@ class VIEW3D_PT_voxel_export_godot(ExportPanel, Panel):
 
 
 class VIEW3D_PT_voxel_export_unity(ExportPanel, Panel):
-    bl_label = "Unity®"
+    bl_label = "Unity"
     bl_parent_id = "VIEW3D_PT_voxel_export"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -492,7 +492,7 @@ class VIEW3D_PT_voxel_export_unity(ExportPanel, Panel):
 
 
 class VIEW3D_PT_voxel_export_unreal(ExportPanel, Panel):
-    bl_label = "Unreal® Engine"
+    bl_label = "Unreal Engine"
     bl_parent_id = "VIEW3D_PT_voxel_export"
     bl_options = {'DEFAULT_CLOSED'}
 
