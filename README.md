@@ -155,6 +155,11 @@ blender -b --factory-startup --python tests/test_headless.py
 blender --factory-startup --enable-event-simulate --python tests/test_interactive.py -- /tmp/shots
 ```
 
+## License
+
+Voxle is free software under the [GNU General Public License v3.0 or later](LICENSE), like
+Blender itself. The bundled Godot logo is CC BY 4.0 (see Credits).
+
 ## Credits
 
 Voxle is maintained by Josh Taylor <josh@codeinclined.com> and was built with
