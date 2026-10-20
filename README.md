@@ -1,6 +1,6 @@
 # Voxle
 
-MagicaVoxel/Goxel-style voxel modeling inside Blender (4.2+, tested on 5.2), with a
+MagicaVoxel/Goxel-style voxel modeling inside Blender® (4.2+, tested on 5.2), with a
 one-click armature that fits the model, voxel-based skin weights, and export to game engines.
 
 > **Made with Claude Code.** Voxle was created with [Claude Code](https://claude.com/claude-code),
@@ -120,13 +120,13 @@ Open the **Voxle Export** tab in the sidebar (N). Settings at the top apply to e
 Export never touches your scene: it builds a temporary optimized copy, exports it under the
 model's real name, and removes it again.
 
-**Godot** — exports glTF (`.glb` or `.gltf`), which Godot 4 imports natively and which is a
+**Godot** — exports glTF™ (`.glb` or `.gltf`), which Godot 4 imports natively and which is a
 stable format, unlike `.tscn` scenes. Pick your project folder (Voxle finds
 `project.godot` and shows the `res://` path) and a folder inside it (`assets/models` by
 default), then press **Export to Godot**. Godot import hints are optional: a **Collision** suffix (`-col`, `-convcol`,
 `-colonly`) for static models, and **Loop Animations** (`-loop`).
 
-**Unity** and **Unreal Engine** sections are placeholders for now; use **Other Engine**
+**Unity®** and **Unreal® Engine** sections are placeholders for now; use **Other Engine**
 meanwhile (Unity: FBX, Y up, Z forward; Unreal: FBX, Z up, scale 100).
 
 **Other Engine** — glTF or FBX to any folder, with the up axis, forward axis (FBX) and scale.
@@ -158,12 +158,26 @@ blender --factory-startup --enable-event-simulate --python tests/test_interactiv
 ## License
 
 Voxle is free software under the [GNU General Public License v3.0 or later](LICENSE), like
-Blender itself. The bundled Godot logo is CC BY 4.0 (see Credits).
+Blender itself.
+
+## Trademarks
+
+Voxle is an independent project. It is not sponsored by, endorsed by or affiliated with the
+Blender Foundation, the Godot Foundation, Unity Technologies, Epic Games, the Khronos Group,
+Autodesk or ephtracy. Engine and format names are used only to say what Voxle works with.
+
+- Blender is a registered trademark of the Blender Foundation in the EU and USA.
+- GODOT and GODOT ENGINE are trademarks of the Godot Foundation.
+- Unity is a trademark or registered trademark of Unity Technologies or its affiliates in the
+  U.S. and elsewhere.
+- Unreal and Unreal Engine are trademarks or registered trademarks of Epic Games, Inc. in the
+  United States of America and elsewhere.
+- glTF and the glTF logo are trademarks of the Khronos Group Inc.
+- FBX is a registered trademark of Autodesk, Inc.
+- MagicaVoxel is developed by ephtracy; Goxel by Guillaume Chereau.
+- All other names are the property of their respective owners.
 
 ## Credits
 
 Voxle is maintained by Josh Taylor <josh@codeinclined.com> and was built with
 [Claude Code](https://claude.com/claude-code).
-
-The Godot logo (`voxle/icons/godot.png`) is by Andrea Calabró, licensed under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
