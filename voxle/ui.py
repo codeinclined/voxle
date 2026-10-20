@@ -18,7 +18,7 @@ def _voxel_object(context):
 class VoxelPanel:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Voxel"
+    bl_category = "Voxle"
 
 
 class VoxelSubPanel(VoxelPanel):
@@ -30,7 +30,7 @@ class VoxelSubPanel(VoxelPanel):
 
 
 class VIEW3D_PT_voxel(VoxelPanel, Panel):
-    bl_label = "Voxel Editor"
+    bl_label = "Voxle"
 
     def draw(self, context):
         layout = self.layout
@@ -55,7 +55,7 @@ class VIEW3D_PT_voxel(VoxelPanel, Panel):
             targets = rig.bound_objects(active)
             if targets:
                 col = layout.column(align=True)
-                col.label(text="Voxel rig", icon='OUTLINER_OB_ARMATURE')
+                col.label(text="Voxle rig", icon='OUTLINER_OB_ARMATURE')
                 row = col.row(align=True)
                 row.operator("voxel.rig_mode", text="Pose", icon='POSE_HLT').mode = 'POSE'
                 row.operator("voxel.rig_mode", text="Edit Bones", icon='EDITMODE_HLT').mode = 'EDIT'
@@ -73,7 +73,7 @@ class VIEW3D_PT_voxel(VoxelPanel, Panel):
         col = layout.column(align=True)
         row = col.row()
         row.scale_y = 1.5
-        row.operator("voxel.new", text="New Voxel Object", icon='ADD')
+        row.operator("voxel.new", text="New Voxle Object", icon='ADD')
         col.operator("voxel.import_vox", text="Import .vox", icon='IMPORT')
 
 

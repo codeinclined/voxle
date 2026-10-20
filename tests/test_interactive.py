@@ -7,11 +7,11 @@ import bpy
 import numpy as np
 from bpy_extras import view3d_utils
 from mathutils import Vector
-import voxel_editor
-from voxel_editor import state, mesh
+import voxle
+from voxle import state, mesh
 
 OUT = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "/tmp"
-voxel_editor.register()
+voxle.register()
 results = []
 def check(name, cond):
     results.append((name, bool(cond)))
@@ -152,7 +152,7 @@ def check_face():
     check("face extrude 3 layers of 4x4", count() == W["n1"] + 48 and (g[6:10, 6:10, 4:7] > 0).all())
     key('THREE'); key('V')
     # pick palette colour from the overlay: column 3 row 3 -> index 27
-    from voxel_editor import draw
+    from voxle import draw
     x0, y0, cs = draw.palette_layout(state.ACTIVE)
     win, area, region = ctx()
     idx = 3 * 8 + 3
@@ -219,7 +219,7 @@ def bone_shot2():
 @step
 def check_bone_paint():
     s = state.ACTIVE
-    from voxel_editor import rig
+    from voxle import rig
     check("bone painted", rig.slot_name(s.obj, int(s.bones[7, 7, 6])) == "bone.01")
     key('ESC')
 
@@ -242,7 +242,7 @@ def final_shot():
 
 @step
 def move_panels_to_item_tab():
-    from voxel_editor import ui
+    from voxle import ui
     for c in reversed(ui.classes): bpy.utils.unregister_class(c)
     for n in ("VIEW3D_PT_transform", "OBJECT_PT_transform"):
         c = getattr(bpy.types, n, None)
@@ -262,7 +262,7 @@ def sidebar_shot():
 def ik_grab_hand():
     # A real G move on a T-posed humanoid's IK hand must follow the drag (Limit Reach once
     # made the hand jump up 45 degrees during interactive transforms).
-    from voxel_editor import vox, rig
+    from voxle import vox, rig
     from mathutils import Vector
     g = np.zeros((32, 32, 32), np.uint8)
     g[13:15, 14:16, 0:7] = 5; g[17:19, 14:16, 0:7] = 5; g[13:19, 14:16, 7:12] = 20

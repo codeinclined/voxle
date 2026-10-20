@@ -1,12 +1,12 @@
-"""Voxel Editor - MagicaVoxel/Goxel-style voxel modeling and rigging inside Blender."""
+"""Voxle - MagicaVoxel/Goxel-style voxel modeling and rigging inside Blender."""
 
 bl_info = {
-    "name": "Voxel Editor",
+    "name": "Voxle",
     "description": "MagicaVoxel-style voxel modeling, painting and easy rigging",
     "blender": (4, 2, 0),
     "version": (1, 0, 0),
     "category": "3D View",
-    "location": "3D Viewport > Sidebar > Voxel, Add > Voxel Object",
+    "location": "3D Viewport > Sidebar > Voxle, Add > Voxle Object",
 }
 
 import bpy

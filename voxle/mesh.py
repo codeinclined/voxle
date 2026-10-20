@@ -6,7 +6,8 @@ from mathutils import Matrix, Vector
 
 from . import core, props, state
 
-MATERIAL_TAG = "voxel_editor_material"
+MATERIAL_TAG = "voxle_material"
+LEGACY_MATERIAL_TAGS = ("voxel_editor_material",)  # files saved before the Voxle rename
 
 
 # ----------------------------------------------------------------------------
@@ -119,7 +120,7 @@ def _make_material(name, img):
 
 
 def _material_image(mat):
-    if mat is None or not mat.get(MATERIAL_TAG) or mat.node_tree is None:
+    if mat is None or not (mat.get(MATERIAL_TAG) or any(mat.get(t) for t in LEGACY_MATERIAL_TAGS)) or mat.node_tree is None:
         return None
     for n in mat.node_tree.nodes:
         if n.type == 'TEX_IMAGE':

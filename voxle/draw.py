@@ -241,7 +241,7 @@ def draw_2d(session):
         parts.append(f"{st['layers']} layers")
     X, Y, Z = session.grid.shape
     parts.append(f"{X}x{Y}x{Z}")
-    _text(sx, y, "VOXEL EDIT  ·  " + "  ·  ".join(parts), int(13 * s), (1.0, 1.0, 1.0, 1.0))
+    _text(sx, y, "VOXLE  ·  " + "  ·  ".join(parts), int(13 * s), (1.0, 1.0, 1.0, 1.0))
     y += int(20 * s)
     if session.message:
         _text(sx, y, session.message, int(12 * s), (1.0, 0.8, 0.3, 1.0))
