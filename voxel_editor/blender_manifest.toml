@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+
+id = "voxel_editor"
+version = "1.0.0"
+name = "Voxel Editor"
+tagline = "MagicaVoxel-style voxel modeling, painting and easy rigging"
+maintainer = "Voxel Editor contributors"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+tags = ["Modeling", "Paint", "Rigging", "Import-Export"]
+
+[permissions]
+files = "Import and export MagicaVoxel .vox files"
