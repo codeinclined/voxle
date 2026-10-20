@@ -299,6 +299,100 @@ def inset_offsets(surf, amount):
     return -np.sign(acc) * np.asarray(amount, np.float32)[:, None]
 
 
+def merge_coplanar(surf, W, grid):
+    """Greedy meshing for export: merge flat runs of same-colored faces into big quads.
+
+    Only whole voxel faces whose four corners all belong fully to the same bone (W) are
+    merged, so every vertex left on a merged quad's edge moves rigidly with it and no
+    cracks can open when the mesh deforms. Loop-cut bends and blended joints are left as
+    they are. Returns (surf, W, keep) where keep indexes the surviving original vertices.
+    """
+    V, F = surf.verts, surf.faces
+    if not len(F):
+        return surf, W, np.arange(len(V))
+    Vr = np.round(V).astype(np.int64)
+    on_grid = np.all(np.abs(V - Vr) < 1e-6, axis=1)
+    expected = surf.face_voxel[:, None, :] + FACE_CORNERS[surf.face_dir]
+    unit = np.all(Vr[F] == expected, axis=(1, 2)) & on_grid[F].all(axis=1)
+    if W is not None and W.shape[0]:
+        top = W.argmax(axis=0)
+        pure = W.max(axis=0) >= 0.999
+        fb = top[F]
+        ok = unit & pure[F].all(axis=1) & (fb == fb[:, :1]).all(axis=1)
+        bone = fb[:, 0]
+    else:
+        ok = unit
+        bone = np.zeros(len(F), np.int64)
+    fx, fy, fz = surf.face_voxel.T
+    color = grid[fx, fy, fz].astype(np.int64)
+    d = surf.face_dir.astype(np.int64)
+    axis = d // 2
+    plane = surf.face_voxel[np.arange(len(F)), axis] + (d % 2 == 0)
+
+    groups = {}
+    for f in np.flatnonzero(ok):
+        groups.setdefault((d[f], plane[f], color[f], bone[f]), []).append(f)
+
+    new_faces, new_vox, new_dir, removed = [], [], [], []
+    for (dd, pl, _c, _b), fs in groups.items():
+        if len(fs) < 2:
+            continue
+        ax = dd // 2
+        ua, va = [a for a in range(3) if a != ax]
+        cells = {}
+        index = {}
+        for f in fs:
+            vx = surf.face_voxel[f]
+            cells[(int(vx[ua]), int(vx[va]))] = f
+            for vi in F[f]:
+                index[tuple(Vr[vi])] = vi
+        done = set()
+        for (u, v) in sorted(cells, key=lambda k: (k[1], k[0])):
+            if (u, v) in done:
+                continue
+            w = 1
+            while (u + w, v) in cells and (u + w, v) not in done:
+                w += 1
+            h = 1
+            while all((u + i, v + h) in cells and (u + i, v + h) not in done for i in range(w)):
+                h += 1
+            if w * h == 1:
+                done.add((u, v))
+                continue
+            for i in range(w):
+                for j in range(h):
+                    done.add((u + i, v + j))
+                    removed.append(cells[(u + i, v + j)])
+            corners = []
+            for cu, cv in ((u, v), (u + w, v), (u + w, v + h), (u, v + h)):
+                p = [0, 0, 0]
+                p[ax], p[ua], p[va] = int(pl), cu, cv
+                corners.append(index[tuple(p)])
+            q = np.array(corners)
+            # Keep the original outward winding.
+            P = Vr[q].astype(np.float64)
+            n = np.cross(P[1] - P[0], P[2] - P[0])
+            if np.dot(n, FACE_NORMALS[dd]) < 0:
+                q = q[::-1]
+            new_faces.append(q)
+            new_vox.append(surf.face_voxel[cells[(u, v)]])
+            new_dir.append(dd)
+    if not new_faces:
+        return surf, W, np.arange(len(V))
+    keep_f = np.ones(len(F), bool)
+    keep_f[removed] = False
+    faces = np.concatenate([F[keep_f], np.array(new_faces, np.int64)])
+    fvox = np.concatenate([surf.face_voxel[keep_f], np.array(new_vox, surf.face_voxel.dtype)])
+    fdir = np.concatenate([surf.face_dir[keep_f], np.array(new_dir, surf.face_dir.dtype)])
+    keep = np.unique(faces)
+    remap = np.full(len(V), -1, np.int64)
+    remap[keep] = np.arange(len(keep))
+    out = Surface(V[keep], remap[faces].astype(np.int32), fvox, fdir,
+                  None if surf.vert_part is None else surf.vert_part[keep],
+                  None if surf.vert_welded is None else surf.vert_welded[keep])
+    return out, (None if W is None else W[:, keep]), keep
+
+
 def surface_of_cells(cells, inflate=0.0):
     """Outer quads of a set of cells, as float32 (F, 4, 3) corner positions."""
     if cells is None or not len(cells):

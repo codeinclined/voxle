@@ -409,6 +409,98 @@ try:
     mesh.ensure_material(dup)
     check("duplicate gets own palette", dup.voxel.palette_image != obj.voxel.palette_image and dup.data.materials[0] != obj.data.materials[0])
 
+    # Game engine export (Godot glTF + Other/FBX)
+    import json, struct
+    def glb_json(path):
+        with open(path, "rb") as f:
+            data = f.read()
+        n, = struct.unpack_from("<I", data, 12)
+        return json.loads(data[20:20 + n])
+    def tris(j):
+        return sum(j["accessors"][p["indices"]]["count"] // 3 for m in j["meshes"] for p in m["primitives"])
+    from voxel_editor import export as vexport
+    proj = os.path.join(tmp, "godot_proj"); os.makedirs(proj, exist_ok=True)
+    with open(os.path.join(proj, "project.godot"), "w") as f:
+        f.write('[application]\nconfig/name="T"\n')
+    ea = rig.create_armature(ctx, obj, 'HUMANOID')
+    ea.animation_data_create(); act = bpy.data.actions.new("Walk"); ea.animation_data.action = act
+    hb2 = ea.pose.bones["hand_ik.L"]
+    hb2.keyframe_insert("location", frame=1); hb2.location = (0, 0.2, 0); hb2.keyframe_insert("location", frame=8); hb2.location = (0, 0, 0)
+    cg = np.zeros((6, 6, 3), np.uint8); cg[:, :, 0] = 3; cg[1:5, 1:5, 1:3] = 9
+    crate = vox.new_voxel_object(ctx, "Crate", cg, location=(-4, 0, 0))
+    es = ctx.scene.voxel_export
+    es.godot_project = proj; es.godot_folder = "models/chars"; es.godot_loop = True
+    es.godot_collision = 'TRIMESH'; es.target = 'ALL'
+    before = sorted(o.name for o in bpy.data.objects); nv0 = len(obj.data.vertices); name0 = obj.name
+    res = bpy.ops.voxel.export_engine(engine='GODOT')
+    outdir = os.path.join(proj, "models", "chars")
+    files = sorted(os.listdir(outdir)) if os.path.isdir(outdir) else []
+    n_models = sum(1 for o in ctx.scene.objects if o.voxel.is_voxel and o.type == 'MESH')
+    check("godot export writes a .glb per model", res == {'FINISHED'} and {name0 + ".glb", "Crate.glb"} <= set(files)
+          and len(files) == n_models)
+    check("export leaves the scene untouched", sorted(o.name for o in bpy.data.objects) == before
+          and len(obj.data.vertices) == nv0 and obj.name == name0 and not any(m.name.endswith(".export") for m in bpy.data.meshes))
+    j = glb_json(os.path.join(outdir, name0 + ".glb"))
+    check("godot export: deform bones only", len(j["skins"][0]["joints"]) == sum(1 for b in ea.data.bones if b.use_deform))
+    check("godot export: -loop animation names", [a["name"] for a in j.get("animations", [])] == ["Walk-loop"]
+          and act.name == "Walk")
+    check("godot export: nearest-filtered palette", j["samplers"][0]["magFilter"] == 9728)
+    jc = glb_json(os.path.join(outdir, "Crate.glb"))
+    check("godot export: collision hint on static models", [n["name"] for n in jc["nodes"]] == ["Crate-col"])
+    es.merge_faces = False; es.target = 'ACTIVE'; es.godot_collision = 'NONE'
+    ctx.view_layer.objects.active = crate
+    bpy.ops.voxel.export_engine(engine='GODOT')
+    t_full = tris(glb_json(os.path.join(outdir, "Crate.glb")))
+    print("  crate triangles merged/unmerged:", tris(jc), t_full)
+    check("merge flat faces cuts triangles", tris(jc) * 4 < t_full)
+    es.merge_faces = True
+    es.other_path = os.path.join(tmp, "other"); es.other_format = 'FBX'; es.other_up = 'Z'; es.other_scale = 100
+    check("other engine FBX export", bpy.ops.voxel.export_engine(engine='OTHER') == {'FINISHED'}
+          and os.listdir(es.other_path) == ["Crate.fbx"])
+    es.other_format = 'GLB'; es.other_up = '-Y'
+    try:
+        refused = bpy.ops.voxel.export_engine(engine='OTHER') == {'CANCELLED'}
+    except RuntimeError as e:
+        refused = "Y or Z up" in str(e)
+    check("glTF refuses unsupported up axis", refused)
+    # Merged geometry stays watertight and crack-free under deformation: every vertex on a
+    # merged edge belongs to one bone, so the skin still deforms like the unmerged mesh.
+    tmpo = bpy.data.objects.new("mtest", bpy.data.meshes.new("mtest")); ctx.collection.objects.link(tmpo)
+    mesh.rebuild(obj, target=tmpo, optimize=True)
+    check("merged mesh is smaller", len(tmpo.data.polygons) < len(obj.data.polygons))
+    tmpo.parent = ea; tmpo.matrix_parent_inverse = obj.matrix_parent_inverse.copy(); tmpo.matrix_basis = obj.matrix_basis.copy()
+    tmpo.modifiers.new("Armature", 'ARMATURE').object = ea
+    rest = np.array([v.co[:] for v in tmpo.data.vertices])
+    # vertices sitting inside an edge of a merged quad (T-junctions), with that edge
+    tj = []
+    for poly in tmpo.data.polygons:
+        if poly.area < (obj.voxel.voxel_size ** 2) * 1.5:
+            continue
+        for a_, b_ in poly.edge_keys:
+            pa, pb_ = rest[a_], rest[b_]
+            seg = pb_ - pa; L2 = seg @ seg
+            t = ((rest - pa) @ seg) / L2
+            dist = np.linalg.norm(rest - (pa + np.clip(t, 0, 1)[:, None] * seg), axis=1)
+            for vi in np.flatnonzero((dist < 1e-6) & (t > 1e-4) & (t < 1 - 1e-4)):
+                tj.append((vi, a_, b_))
+    for nme, rot in (("forearm.L", (0, 0, 1.2)), ("thigh.R", (1.0, 0, 0)), ("head", (0.3, 0, 0.5)), ("spine", (0.4, 0.2, 0))):
+        pbx = ea.pose.bones[nme]; pbx.rotation_mode = 'XYZ'; pbx.rotation_euler = rot
+    for c in ea.pose.bones["forearm.L"].constraints: c.mute = True
+    dg = ctx.evaluated_depsgraph_get(); dg.update()
+    ev = np.array([v.co[:] for v in tmpo.evaluated_get(dg).data.vertices])
+    crack = 0.0
+    for vi, a_, b_ in tj:
+        pa, pb_ = ev[a_], ev[b_]; seg = pb_ - pa
+        t = np.clip(((ev[vi] - pa) @ seg) / (seg @ seg), 0, 1)
+        crack = max(crack, float(np.linalg.norm(ev[vi] - (pa + t * seg))))
+    print("  T-junctions on merged quads:", len(tj), " worst gap when posed:", crack)
+    check("merged faces don't crack when posed", tj and crack < 1e-5)
+    for c in ea.pose.bones["forearm.L"].constraints: c.mute = False
+    for pbx in ea.pose.bones: pbx.matrix_basis = Matrix()
+    bpy.data.objects.remove(tmpo)
+    bpy.data.objects.remove(crate)
+    ctx.view_layer.objects.active = obj
+
     # Save/reload persists
     fp = os.path.join(tmp, "t.blend")
     nf = len(obj.data.polygons)

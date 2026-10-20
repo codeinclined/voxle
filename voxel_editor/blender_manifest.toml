@@ -13,4 +13,4 @@ license = ["SPDX:GPL-3.0-or-later"]
 tags = ["Modeling", "Paint", "Rigging", "Import-Export"]
 
 [permissions]
-files = "Import and export MagicaVoxel .vox files"
+files = "Import/export .vox files and export to game engines"
