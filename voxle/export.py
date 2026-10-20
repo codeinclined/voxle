@@ -4,13 +4,10 @@ import os
 import textwrap
 
 import bpy
-import bpy.utils.previews
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, PointerProperty, StringProperty
 from bpy.types import Operator, Panel, PropertyGroup
 
 from . import mesh, rig, state
-
-ICONS = None  # bpy.utils.previews collection with the engine logos
 
 GODOT_COLLISION_SUFFIX = {'NONE': "", 'TRIMESH': "-col", 'CONVEX': "-convcol", 'ONLY': "-colonly"}
 
@@ -24,12 +21,6 @@ def wrapped_label(layout, context, text, icon='NONE'):
     for i, line in enumerate(textwrap.wrap(text, chars) or [""]):
         col.label(text=line, icon=icon if i == 0 else 'BLANK1' if icon != 'NONE' else 'NONE')
     return col
-
-
-def icon(name):
-    if ICONS is None or name not in ICONS:
-        return 0
-    return ICONS[name].icon_id
 
 
 # ----------------------------------------------------------------------------
@@ -465,9 +456,6 @@ class VIEW3D_PT_voxel_export_godot(ExportPanel, Panel):
     bl_label = "Godot"
     bl_parent_id = "VIEW3D_PT_voxel_export"
 
-    def draw_header(self, context):
-        self.layout.label(text="", icon_value=icon("godot"))
-
     def draw(self, context):
         layout = self.layout
         s = settings(context)
@@ -490,11 +478,11 @@ class VIEW3D_PT_voxel_export_godot(ExportPanel, Panel):
         row = layout.row()
         row.scale_y = 1.5
         row.enabled = bool(s.godot_project)
-        row.operator("voxel.export_engine", text="Export to Godot", icon_value=icon("godot")).engine = 'GODOT'
+        row.operator("voxel.export_engine", text="Export to Godot", icon='EXPORT').engine = 'GODOT'
 
 
 class VIEW3D_PT_voxel_export_unity(ExportPanel, Panel):
-    bl_label = "Unity"
+    bl_label = "Unity®"
     bl_parent_id = "VIEW3D_PT_voxel_export"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -504,7 +492,7 @@ class VIEW3D_PT_voxel_export_unity(ExportPanel, Panel):
 
 
 class VIEW3D_PT_voxel_export_unreal(ExportPanel, Panel):
-    bl_label = "Unreal Engine"
+    bl_label = "Unreal® Engine"
     bl_parent_id = "VIEW3D_PT_voxel_export"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -551,23 +539,12 @@ classes = (
 
 
 def register():
-    global ICONS
-    ICONS = bpy.utils.previews.new()
-    folder = os.path.join(os.path.dirname(__file__), "icons")
-    for name in ("godot",):
-        path = os.path.join(folder, name + ".png")
-        if os.path.isfile(path):
-            ICONS.load(name, path, 'IMAGE')
     for c in classes:
         bpy.utils.register_class(c)
     bpy.types.Scene.voxel_export = PointerProperty(type=VoxelExportSettings)
 
 
 def unregister():
-    global ICONS
     del bpy.types.Scene.voxel_export
     for c in reversed(classes):
         bpy.utils.unregister_class(c)
-    if ICONS is not None:
-        bpy.utils.previews.remove(ICONS)
-        ICONS = None
