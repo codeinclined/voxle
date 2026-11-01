@@ -28,7 +28,7 @@ jobs:
         # Oldest supported (blender_version_min) and the version Voxle is tested on.
         blender: ["4.2", "5.2"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-blender
         with:
           version: ${{ matrix.blender }}
@@ -44,7 +44,7 @@ jobs:
     permissions:
       contents: write  # create the GitHub Release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-blender
         with:
           version: "5.2"
@@ -66,7 +66,7 @@ jobs:
           cd voxle && blender --command extension build --output-dir ../dist
           ls -l ../dist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.meta.outputs.zip }}
           path: dist/${{ steps.meta.outputs.zip }}
