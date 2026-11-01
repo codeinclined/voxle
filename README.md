@@ -155,6 +155,18 @@ blender -b --factory-startup --python tests/test_headless.py
 blender --factory-startup --enable-event-simulate --python tests/test_interactive.py -- /tmp/shots
 ```
 
+## Releases
+
+Every push and pull request is built and tested on Blender 4.2 and 5.2 by
+`.github/workflows/release.yml`. To publish, bump `version` in `voxle/blender_manifest.toml`,
+commit, and push a matching tag:
+
+```sh
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+The workflow then attaches `voxle-1.0.1.zip` to a GitHub Release.
+
 ## License
 
 Voxle is free software under the [GNU General Public License v3.0 or later](LICENSE), like
