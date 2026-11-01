@@ -1,0 +1,83 @@
+# Builds the Blender extension zip, tests it, and attaches it to a GitHub Release.
+#
+# Release:  bump `version` in voxle/blender_manifest.toml, commit, then
+#           git tag v1.0.1 && git push origin v1.0.1
+# Pull requests and pushes to main only build and test; nothing is published.
+#
+# Free: GitHub Actions minutes and Releases cost nothing on public repositories.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test on Blender ${{ matrix.blender }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported (blender_version_min) and the version Voxle is tested on.
+        blender: ["4.2", "5.2"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-blender
+        with:
+          version: ${{ matrix.blender }}
+      - name: Validate manifest
+        run: blender --command extension validate voxle
+      - name: Headless tests
+        run: blender -b --factory-startup --python tests/test_headless.py
+
+  build:
+    name: Build and release
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-blender
+        with:
+          version: "5.2"
+
+      - name: Read version from manifest
+        id: meta
+        run: |
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('voxle/blender_manifest.toml','rb'))['version'])")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "zip=voxle-$version.zip" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest version $version (expected v$version)"
+            exit 1
+          fi
+
+      - name: Build extension zip
+        run: |
+          mkdir -p dist
+          cd voxle && blender --command extension build --output-dir ../dist
+          ls -l ../dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.zip }}
+          path: dist/${{ steps.meta.outputs.zip }}
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/${{ steps.meta.outputs.zip }}" \
+            --title "Voxle ${{ steps.meta.outputs.version }}" \
+            --generate-notes \
+            --notes "Install: in Blender 4.2+, open **Edit > Preferences > Get Extensions > ⌄ > Install from Disk** and pick \`${{ steps.meta.outputs.zip }}\`."
+

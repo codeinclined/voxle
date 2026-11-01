@@ -1,0 +1,48 @@
+name: Set up Blender
+description: Download the latest patch release of a Blender series and put it on PATH.
+
+inputs:
+  version:
+    description: Blender series, e.g. "4.2"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve latest patch release
+      id: resolve
+      shell: bash
+      run: |
+        base="https://download.blender.org/release/Blender${{ inputs.version }}"
+        file=$(curl -fsSL "$base/" | grep -oE "blender-${{ inputs.version }}\.[0-9]+-linux-x64\.tar\.xz" | sort -uV | tail -1)
+        if [[ -z "$file" ]]; then echo "::error::No Linux build found at $base/"; exit 1; fi
+        echo "file=$file" >> "$GITHUB_OUTPUT"
+        echo "url=$base/$file" >> "$GITHUB_OUTPUT"
+        echo "dir=${file%.tar.xz}" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Blender
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/blender/${{ steps.resolve.outputs.dir }}
+        key: ${{ steps.resolve.outputs.dir }}
+
+    - name: Download Blender
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir -p ~/blender
+        curl -fsSL "${{ steps.resolve.outputs.url }}" | tar -xJ -C ~/blender
+
+    - name: Install runtime libraries
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq --no-install-recommends \
+          libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1
+
+    - name: Add Blender to PATH
+      shell: bash
+      run: |
+        echo "$HOME/blender/${{ steps.resolve.outputs.dir }}" >> "$GITHUB_PATH"
+        "$HOME/blender/${{ steps.resolve.outputs.dir }}/blender" --version | head -1
